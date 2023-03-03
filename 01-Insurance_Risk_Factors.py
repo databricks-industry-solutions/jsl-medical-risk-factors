@@ -380,6 +380,7 @@ age_chunk_converter = ChunkConverter() \
 
 # COMMAND ----------
 
+dbutils.fs.mkdirs("/databricks/driver/Insurence_Risk_Factors/files/")
 with open('/dbfs/databricks/driver/Insurence_Risk_Factors/files/replace_dict.csv', 'w') as f:
     f.write("""SMOKING,SMOKER
 CAD,DISEASE
@@ -407,7 +408,9 @@ SUBSTANCE_USE,SUBSTANCE
 EMPLOYMENT,PROFESSION
 MENTAL_HEALTH,PSYCHOLOGICAL_CONDITION
 """)
-    
+
+# COMMAND ----------
+
 chunk_merger = ChunkMergeApproach()\
     .setInputCols("ner_jsl_chunk", "ner_deid_chunk", "ner_risks_chunk", "ner_sdoh_chunk", "ner_posology_chunk", "chunk_age")\
     .setOutputCol('ner_chunk')\
