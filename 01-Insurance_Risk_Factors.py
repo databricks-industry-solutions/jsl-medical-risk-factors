@@ -153,19 +153,20 @@ def get_normalized_name(df, column):
 # COMMAND ----------
 
 # create folders
-dbutils.fs.mkdirs("dbfs:/databricks/driver/Insurence_Risk_Factors")
-dbutils.fs.mkdirs("dbfs:/databricks/driver/Insurence_Risk_Factors/data")
-dbutils.fs.mkdirs("dbfs:/databricks/driver/Insurence_Risk_Factors/results")
+dbutils.fs.mkdirs("dbfs:/solacc/Insurence_Risk_Factors")
+dbutils.fs.mkdirs("dbfs:/solacc/Insurence_Risk_Factors/data")
+dbutils.fs.mkdirs("dbfs:/solacc/Insurence_Risk_Factors/results")
+dbutils.fs.mkdirs("dbfs:/solacc/Insurence_Risk_Factors/files")
 
 # COMMAND ----------
 
 #download dataset
-! wget -q https://raw.githubusercontent.com/JohnSnowLabs/spark-nlp-workshop/master/healthcare-nlp/data/mt_data.csv -P /dbfs/databricks/driver/Insurence_Risk_Factors/data
+! wget -q https://raw.githubusercontent.com/JohnSnowLabs/spark-nlp-workshop/master/healthcare-nlp/data/mt_data.csv -P /dbfs/solacc/Insurence_Risk_Factors/data
 
 # COMMAND ----------
 
 # read data as a pandas dataframe
-data = pd.read_csv('/dbfs/databricks/driver/Insurence_Risk_Factors/data/mt_data.csv')
+data = pd.read_csv('/dbfs/solacc/Insurence_Risk_Factors/data/mt_data.csv')
 data.head()
 
 # COMMAND ----------
@@ -356,14 +357,14 @@ age = {
   "exceptionDistance": 12
 }
 
-with open('age.json', 'w') as f:
+with open('/dbfs/solacc/Insurence_Risk_Factors/files/age.json', 'w') as f:
     json.dump(age, f)
 
 
 age_contextual_parser = ContextualParserApproach() \
         .setInputCols(["sentence", "token"]) \
         .setOutputCol("age_cp") \
-        .setJsonPath("age.json") \
+        .setJsonPath("/dbfs/solacc/Insurence_Risk_Factors/files/age.json") \
         .setCaseSensitive(False) \
         .setPrefixAndSuffixMatch(False)\
         .setShortestContextMatch(True)\
@@ -380,8 +381,8 @@ age_chunk_converter = ChunkConverter() \
 
 # COMMAND ----------
 
-dbutils.fs.mkdirs("/databricks/driver/Insurence_Risk_Factors/files/")
-with open('/dbfs/databricks/driver/Insurence_Risk_Factors/files/replace_dict.csv', 'w') as f:
+
+with open('/dbfs/solacc/Insurence_Risk_Factors/files/replace_dict.csv', 'w') as f:
     f.write("""SMOKING,SMOKER
 CAD,DISEASE
 CEREBROVASCULAR_DISEASE,DISEASE
@@ -416,7 +417,7 @@ chunk_merger = ChunkMergeApproach()\
     .setOutputCol('ner_chunk')\
     .setOrderingFeatures(["ChunkLength"])\
     .setSelectionStrategy("DiverseLonger")\
-    .setReplaceDictResource('dbfs:/databricks/driver/Insurence_Risk_Factors/files/replace_dict.csv',"text", {"delimiter":","})
+    .setReplaceDictResource('dbfs:/solacc/Insurence_Risk_Factors/files/replace_dict.csv',"text", {"delimiter":","})
 
 # COMMAND ----------
 
@@ -683,7 +684,7 @@ chunk_merger_assertion = ChunkMergeApproach()\
     .setOutputCol('assertion_chunk')\
     .setOrderingFeatures(["ChunkLength"])\
     .setSelectionStrategy("DiverseLonger")\
-    .setReplaceDictResource('dbfs:/databricks/driver/Insurence_Risk_Factors/files/replace_dict.csv',"text", {"delimiter":","})
+    .setReplaceDictResource('dbfs:/solacc/Insurence_Risk_Factors/files/replace_dict.csv',"text", {"delimiter":","})
 
 chunk_filterer = ChunkFilterer()\
     .setInputCols("sentence","assertion_chunk")\
@@ -919,11 +920,11 @@ behaviour_clf_df
 # COMMAND ----------
 
 #downloading the sample dataset
-! wget -q https://raw.githubusercontent.com/JohnSnowLabs/spark-nlp-workshop/master/healthcare-nlp/data/insurance_risk_factors_df.pickle -P /dbfs/databricks/driver/Insurence_Risk_Factors/data
+! wget -q https://raw.githubusercontent.com/JohnSnowLabs/spark-nlp-workshop/master/healthcare-nlp/data/insurance_risk_factors_df.pickle -P /dbfs/solacc/Insurence_Risk_Factors/data
 
 # COMMAND ----------
 
-insurance_risk_df = pd.read_pickle("/dbfs/databricks/driver/Insurence_Risk_Factors/data/insurance_risk_factors_df.pickle")
+insurance_risk_df = pd.read_pickle("/dbfs/solacc/Insurence_Risk_Factors/data/insurance_risk_factors_df.pickle")
 insurance_risk_df
 
 # COMMAND ----------
