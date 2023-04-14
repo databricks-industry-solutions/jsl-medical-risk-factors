@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Automated extraction of medical risk factors for life insurance underwriting
-# MAGIC  
+# MAGIC
 # MAGIC Life insurance underwriting considers an applicant’s medical risk factors, usually provided inside free-text documents. New insurance-specific Natural Language Processing (NLP) models can automatically extract material medical history and risk factors from such documents. This joint Solution Accelerator with John Snow Labs makes it easy to implement this in practice – enabling a faster, more consistent, and more scalable underwriting experience. This webinar will cover:
 # MAGIC - The end-to-end solution architecture on Databricks, from data ingestion to dashboarding
 # MAGIC - Easily analyze free-text documents to extract medical history & risk factors using NLP
@@ -16,13 +16,13 @@
 
 # MAGIC %md
 # MAGIC - Basic Profile
-# MAGIC     - ✅ Age 
-# MAGIC     - ✅ Gender 
-# MAGIC     - ✅ Weight 
-# MAGIC     - ✅ Height 
+# MAGIC     - ✅ Age
+# MAGIC     - ✅ Gender
+# MAGIC     - ✅ Weight
+# MAGIC     - ✅ Height
 # MAGIC - Personal History
 # MAGIC     - ✅ Medical records (ICD)
-# MAGIC     - ✅ Prescription history (RxNorm) 
+# MAGIC     - ✅ Prescription history (RxNorm)
 # MAGIC     - ✅ Actions of prescriptions (Action Mapper)
 # MAGIC     - ✅ Family health history (ICD + Assertion)
 # MAGIC     - Criminal history (Excluded - received from authorities)
@@ -30,9 +30,9 @@
 # MAGIC - Lifestyle
 # MAGIC     - ✅ Profession
 # MAGIC     - ✅ Marital status
-# MAGIC     - ✅ Smoking 
-# MAGIC     - ✅ Alcohol 
-# MAGIC     - ✅ Substance 
+# MAGIC     - ✅ Smoking
+# MAGIC     - ✅ Alcohol
+# MAGIC     - ✅ Substance
 # MAGIC - Diseases
 # MAGIC     - Asthma and breathing problems
 # MAGIC     - Heart disease, including heart attacks and angina
@@ -90,8 +90,8 @@ spark
 
 # MAGIC %md
 # MAGIC ## Helper Functions
-# MAGIC 
-# MAGIC We will define some helper functions to use in downstreaming tasks. 
+# MAGIC
+# MAGIC We will define some helper functions to use in downstreaming tasks.
 
 # COMMAND ----------
 
@@ -108,14 +108,14 @@ def get_treatment_action(drug_rxnorm):
     # returns RxNorm codes and drug actions
     try:
         action = mapper_lp.fullAnnotate(drug_rxnorm[0])[0]['action'][0].result
-    except: 
+    except:
         action = "NONE"
     return (drug_rxnorm[1], action)
 
 # COMMAND ----------
 
 def get_occurence(df, label, pair_count):
-    # returns the counts of the term occurence 
+    # returns the counts of the term occurence
     d  = Counter()
     a = df[label].to_list()
     for sub in a:
@@ -143,11 +143,11 @@ def get_normalized_name(df, column):
 
 # MAGIC %md
 # MAGIC ## Download Clinical Notes
-# MAGIC 
+# MAGIC
 # MAGIC First we will create our folders and then download sample clinical notes.
-# MAGIC 
-# MAGIC In this notebook we will use the slightly modified version of transcribed medical reports in [www.mtsamples.com](www.mtsamples.com). 
-# MAGIC 
+# MAGIC
+# MAGIC In this notebook we will use the slightly modified version of transcribed medical reports in [www.mtsamples.com](www.mtsamples.com).
+# MAGIC
 # MAGIC You can download those reports by the script [here](https://github.com/JohnSnowLabs/spark-nlp-workshop/blob/master/databricks/python/healthcare_case_studies/mt_scrapper.py).
 
 # COMMAND ----------
@@ -203,7 +203,7 @@ df_samples
 
 # COMMAND ----------
 
-# create spark dataframe 
+# create spark dataframe
 df = spark.createDataFrame(df_samples)
 df.show()
 
@@ -234,9 +234,9 @@ word_embeddings = WordEmbeddingsModel.pretrained("embeddings_clinical", "en", "c
 
 # MAGIC %md
 # MAGIC ## Extracting Diseases
-# MAGIC 
+# MAGIC
 # MAGIC We will download the `sparknlp_jsl` NER models and whitelist the labels that can be used as insurance risk factor.
-# MAGIC 
+# MAGIC
 # MAGIC Lets check the NER labels in `ner_jsl` model and whitelist the ones that are most related to our case. You can add other labels or remove some of them by editting the whitelist.
 
 # COMMAND ----------
@@ -260,8 +260,8 @@ ner_jsl_entities = [
     'Employment', 'Heart_Disease', 'Hyperlipidemia','Hypertension',
     'Kidney_Disease', 'Obesity', 'Oncological', 'Procedure',
     'Smoking', 'VS_Finding', 'Drug', 'EKG_Findings', 'Height', 'ImagingFindings',
-    'Overweight', 'Psychological_Condition', 'Substance', 'BMI', 
-    'Total_Cholesterol', 'Weight', 'ImagingFindings', 'HDL', 'LDL', 'Race_Ethnicity' 
+    'Overweight', 'Psychological_Condition', 'Substance', 'BMI',
+    'Total_Cholesterol', 'Weight', 'ImagingFindings', 'HDL', 'LDL', 'Race_Ethnicity'
 ]
 ner_jsl_entities = [a.upper() for a in ner_jsl_entities]
 
@@ -350,7 +350,7 @@ age = {
   "suffix": ["-years-old", "years-old", "-year-old",
              "-months-old", "-month-old", "-months-old",
              "-day-old", "-days-old", "month old",
-             "days old", "year old", "years old", 
+             "days old", "year old", "years old",
              "years", "year", "months", "old"],
   "contextLength": 25,
   "contextException": ["ago", "last", "before", "spent", "later", "after"],
@@ -368,7 +368,7 @@ age_contextual_parser = ContextualParserApproach() \
         .setCaseSensitive(False) \
         .setPrefixAndSuffixMatch(False)\
         .setShortestContextMatch(True)\
-        .setOptionalContextRules(False) 
+        .setOptionalContextRules(False)
 
 age_chunk_converter = ChunkConverter() \
     .setInputCols(["age_cp"]) \
@@ -422,7 +422,7 @@ chunk_merger = ChunkMergeApproach()\
 # COMMAND ----------
 
 jsl_ner_pipeline = Pipeline(stages=[
-    documentAssembler, 
+    documentAssembler,
     sentenceDetector,
     tokenizer,
     word_embeddings,
@@ -473,7 +473,7 @@ result = jsl_ner_model.transform(df.repartition(32))
 # COMMAND ----------
 
 delta_path='/FileStore/HLS/nlp/delta/jsl/'
- 
+
 result.write.format('delta').mode('overwrite').save(f'{delta_path}/Insurance_Risk_Factor/ner_result')
 display(dbutils.fs.ls(f'{delta_path}/Insurance_Risk_Factor/ner_result'))
 
@@ -491,7 +491,7 @@ result_pd = result.select(
     result.file_name,
     F.explode(
         F.arrays_zip(
-            result.ner_chunk.result, 
+            result.ner_chunk.result,
             result.ner_chunk.metadata)
     )
 ).select(
@@ -527,7 +527,7 @@ df_slim_pivot.columns
 
 # MAGIC %md
 # MAGIC ## Gender Classifier
-# MAGIC 
+# MAGIC
 # MAGIC We will use Spark NLP Gender Classifier models to detect the genders of the patients and add them as a new Gender column to our dataframe.
 
 # COMMAND ----------
@@ -561,7 +561,7 @@ df_slim_pivot
 
 # MAGIC %md
 # MAGIC ## ICD
-# MAGIC 
+# MAGIC
 # MAGIC We will find the ICD10CM codes of the detected `DISEASE` entities by using Spark NLP Sentence Entity Resolver Model and add as a new column.
 
 # COMMAND ----------
@@ -574,7 +574,7 @@ sbert_embedder = BertSentenceEmbeddings.pretrained('sbiobert_base_cased_mli', 'e
     .setInputCols(["ner_chunks"])\
     .setOutputCol("sentence_embeddings")\
     .setCaseSensitive(False)
-    
+
 icd_resolver = SentenceEntityResolverModel.pretrained("sbiobertresolve_icd10cm_augmented_billable_hcc","en", "clinical/models") \
     .setInputCols(["sentence_embeddings"]) \
     .setOutputCol("icd10cm_code")\
@@ -590,16 +590,16 @@ icd10_lp = LightPipeline(icd_pipelineModel)
 
 # COMMAND ----------
 
-# MAGIC %%time 
-# MAGIC 
+# MAGIC %%time
+# MAGIC
 # MAGIC df_slim_pivot['DISEASE_ICD'] = df_slim_pivot['DISEASE'].apply(lambda x : [get_resolver_code(icd10_lp, disease_list, "icd10cm_code") for disease_list in x] if len(x)>0 else [])
 # MAGIC df_slim_pivot
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## RxNorm 
-# MAGIC 
+# MAGIC ## RxNorm
+# MAGIC
 # MAGIC We will find the RxNorm codes of the detected `DRUG` entities by using Spark NLP Sentence Entity Resolver Model and add as a new column.
 
 # COMMAND ----------
@@ -612,7 +612,7 @@ sbert_embedder = BertSentenceEmbeddings.pretrained('sbiobert_base_cased_mli', 'e
     .setInputCols(["ner_chunks"])\
     .setOutputCol("sentence_embeddings")\
     .setCaseSensitive(False)
-    
+
 rxnorm_resolver = SentenceEntityResolverModel.pretrained("sbiobertresolve_rxnorm_augmented","en", "clinical/models") \
     .setInputCols(["sentence_embeddings"]) \
     .setOutputCol("rxnorm_code")\
@@ -629,7 +629,7 @@ rxnorm_lp = LightPipeline(rxnorm_pipelineModel)
 # COMMAND ----------
 
 # MAGIC %%time
-# MAGIC 
+# MAGIC
 # MAGIC df_slim_pivot['DRUG_RXNORM'] = df_slim_pivot['DRUG'].apply(lambda x : [get_resolver_code(rxnorm_lp, drug_list, "rxnorm_code") for drug_list in x] if len(x)>0 else [])
 # MAGIC df_slim_pivot
 
@@ -637,7 +637,7 @@ rxnorm_lp = LightPipeline(rxnorm_pipelineModel)
 
 # MAGIC %md
 # MAGIC ## RxNorm-Drug Actions Mapper
-# MAGIC 
+# MAGIC
 # MAGIC Now we will get the actions of the drugs to check if their actions are in risky category.
 
 # COMMAND ----------
@@ -674,7 +674,7 @@ df_slim_pivot
 
 # MAGIC %md
 # MAGIC ## Family Health History
-# MAGIC 
+# MAGIC
 # MAGIC We can get the family health histories of the patients by using Spark NLP Assertion Status Detection models.
 
 # COMMAND ----------
@@ -703,7 +703,7 @@ assertion_filterer = AssertionFilterer()\
 
 
 family_assertion_pipeline = Pipeline(stages=[
-    documentAssembler, 
+    documentAssembler,
     sentenceDetector,
     tokenizer,
     word_embeddings,
@@ -726,8 +726,8 @@ family_assertion_lmodel= LightPipeline(family_assertion_model)
 
 # COMMAND ----------
 
-# MAGIC %%time 
-# MAGIC 
+# MAGIC %%time
+# MAGIC
 # MAGIC family_diseases = [list(set(family_assertion_lmodel.annotate(i)["assertion_filtered"])) for i in df_samples.text]
 # MAGIC family_disease_df = pd.DataFrame({"PATIENT_ID": df_samples.PATIENT_ID, "FAMILY_DISEASE":family_diseases})
 # MAGIC family_disease_df.FAMILY_DISEASE = family_disease_df.FAMILY_DISEASE.apply(lambda x: list(set([i.lower() for i in x])) if len(x)>0 else [])
@@ -741,8 +741,8 @@ family_assertion_lmodel= LightPipeline(family_assertion_model)
 
 # COMMAND ----------
 
-# MAGIC %%time 
-# MAGIC 
+# MAGIC %%time
+# MAGIC
 # MAGIC df_slim_pivot['FAMILY_DISEASE_ICD'] = df_slim_pivot['FAMILY_DISEASE'].apply(lambda x : [get_resolver_code(icd10_lp, a, "icd10cm_code") for a in x] if len(x)>0 else [])
 # MAGIC df_slim_pivot
 
@@ -750,7 +750,7 @@ family_assertion_lmodel= LightPipeline(family_assertion_model)
 
 # MAGIC %md
 # MAGIC ## Status of Alcohol, Tobacco and Substance Behaviours
-# MAGIC 
+# MAGIC
 # MAGIC We will check the alcohol, tobacco and substance behaviours of the patients.
 
 # COMMAND ----------
@@ -767,7 +767,7 @@ clinical_assertion = AssertionDLModel.pretrained("assertion_jsl_augmented", "en"
 
 
 behaviour_assertion_pipeline = Pipeline(stages=[
-    documentAssembler, 
+    documentAssembler,
     sentenceDetector,
     tokenizer,
     word_embeddings,
@@ -801,7 +801,7 @@ tobacco_status = []
 for k in ann_result:
     label = []
     assertion = []
-    
+
     for i,j in list(zip(k["filtered_chunk"], k["assertion"])):
         label.append(i.metadata["entity"])
         assertion.append(j.result)
@@ -831,22 +831,22 @@ df_slim_pivot
 
 # MAGIC %md
 # MAGIC ## Social Determinants of Health Classification Models
-# MAGIC 
+# MAGIC
 # MAGIC Another way to detect the alcohol, substance and tobacco behviours of the patients is using the SDOH classification models in Spark NLP.
-# MAGIC 
+# MAGIC
 # MAGIC Models:
-# MAGIC 
-# MAGIC - [genericclassifier_sdoh_alcohol_usage_binary_sbiobert_cased_mli](https://nlp.johnsnowlabs.com/2023/01/14/genericclassifier_sdoh_alcohol_usage_binary_sbiobert_cased_mli_en.html): 
+# MAGIC
+# MAGIC - [genericclassifier_sdoh_alcohol_usage_binary_sbiobert_cased_mli](https://nlp.johnsnowlabs.com/2023/01/14/genericclassifier_sdoh_alcohol_usage_binary_sbiobert_cased_mli_en.html):
 # MAGIC   + *Present*
 # MAGIC   + *Never*
-# MAGIC   + *None* 
-# MAGIC - [genericclassifier_sdoh_tobacco_usage_sbiobert_cased_mli](https://nlp.johnsnowlabs.com/2023/01/14/genericclassifier_sdoh_tobacco_usage_sbiobert_cased_mli_en.html): 
+# MAGIC   + *None*
+# MAGIC - [genericclassifier_sdoh_tobacco_usage_sbiobert_cased_mli](https://nlp.johnsnowlabs.com/2023/01/14/genericclassifier_sdoh_tobacco_usage_sbiobert_cased_mli_en.html):
 # MAGIC   + *Present*
 # MAGIC   + *Past*
 # MAGIC   + *Never*
 # MAGIC   + *None*
-# MAGIC - [genericclassifier_sdoh_substance_usage_binary_sbiobert_cased_mli](https://nlp.johnsnowlabs.com/2023/01/14/genericclassifier_sdoh_substance_usage_binary_sbiobert_cased_mli_en.html): 
-# MAGIC   + *Present:* if the patient was a current consumer of substance or the patient was a consumer in the past and had quit or if the patient had never consumed substance. 
+# MAGIC - [genericclassifier_sdoh_substance_usage_binary_sbiobert_cased_mli](https://nlp.johnsnowlabs.com/2023/01/14/genericclassifier_sdoh_substance_usage_binary_sbiobert_cased_mli_en.html):
+# MAGIC   + *Present:* if the patient was a current consumer of substance or the patient was a consumer in the past and had quit or if the patient had never consumed substance.
 # MAGIC   + *None:* if there was no related text.
 
 # COMMAND ----------
@@ -897,7 +897,7 @@ text_list = [
     "He drinks alcohol ten to twelve drinks a week, but does not drink five days a week and then will binge drink. He smokes one and a half pack a day for 15 years.", # text in PATIENT_ID: #66148
     "As mentioned before, the patient's toxicology screen was positive for morphine, methadone, and marijuana.", # text in PATIENT_ID: #24168
     "Ethanol, tobacco, or drugs; he smoked 2 packs per day for 40 years, but quit in 1996. He occasionally has a beer, but denies any continuous use of alcohol. He denies any illicit drug use." # text in PATIENT_ID: #96400
-    
+
 ]
 
 lmodel_behaviour = clf_light_model.fullAnnotate(text_list)
@@ -912,9 +912,9 @@ behaviour_clf_df
 
 # MAGIC %md
 # MAGIC # ANALYSIS
-# MAGIC 
+# MAGIC
 # MAGIC It is time for analysis!
-# MAGIC 
+# MAGIC
 # MAGIC Since the dataframe is a small one, it is not enough for making a good analysis. So we did the same steps for a larger one and we will use that dataframe for making analysis.
 
 # COMMAND ----------
@@ -931,7 +931,7 @@ insurance_risk_df
 
 # MAGIC %md
 # MAGIC ## RACE ETHNICITY-BEHAVIOR ANALYSIS
-# MAGIC 
+# MAGIC
 # MAGIC Lets check the relations between race ethnicities and behavious of patients.
 
 # COMMAND ----------
@@ -965,7 +965,7 @@ plt.show()
 
 # MAGIC %md
 # MAGIC ## GENDER-BASED ANALYSIS
-# MAGIC 
+# MAGIC
 # MAGIC Lets make some gender based analysis.
 
 # COMMAND ----------
@@ -979,7 +979,7 @@ insurance_risk_df.GENDER.value_counts()
 
 # COMMAND ----------
 
-gender_df = insurance_risk_df[insurance_risk_df.GENDER != "Unknown"].copy()   # drop Unknown 
+gender_df = insurance_risk_df[insurance_risk_df.GENDER != "Unknown"].copy()   # drop Unknown
 gender_behaviour_df = gender_df[["GENDER", "SUBSTANCE_STATUS", "ALCOHOL_STATUS", "TOBACCO_STATUS"]]
 gender_behaviour_df = gender_behaviour_df.groupby("GENDER").sum().reset_index()
 gender_behaviour_df = gender_behaviour_df.merge(pd.DataFrame(gender_df.GENDER.value_counts().reset_index()).rename(columns = {"GENDER":"TOTAL", "index":"GENDER"}), on = "GENDER")
@@ -1019,14 +1019,14 @@ plt.show()
 
 # MAGIC %md
 # MAGIC ## DISEASE ANALYSIS
-# MAGIC 
+# MAGIC
 # MAGIC We will analyze the disease based extractions.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Most Common Diseases
-# MAGIC 
+# MAGIC
 # MAGIC Lets check the most common diseases that patients have.
 
 # COMMAND ----------
@@ -1045,8 +1045,8 @@ plt.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Most Common Diseases With Normalized Names 
-# MAGIC 
+# MAGIC ### Most Common Diseases With Normalized Names
+# MAGIC
 # MAGIC Disease extractions can have different formats, so when we will normalize the diseases by using the ICD-10-CM codes and check the most common normalized diseases and see the results will be changed.
 
 # COMMAND ----------
@@ -1069,17 +1069,17 @@ plt.show()
 
 # MAGIC %md
 # MAGIC **As you can see, some of the disease orders have been changed after normalization of the disease column.**
-# MAGIC 
+# MAGIC
 # MAGIC *NOTES:*
-# MAGIC 
-# MAGIC + Growth hormone deficiency (GHD) is a rare and treatable condition that causes short height in children and metabolic issues in adults. 
+# MAGIC
+# MAGIC + Growth hormone deficiency (GHD) is a rare and treatable condition that causes short height in children and metabolic issues in adults.
 # MAGIC + FH is a genetic condition that causes high cholesterol. Familial hypercholesterolemia (FH) is a genetic disorder that affects about 1 in 250 people and increases the likelihood of having coronary heart disease at a younger age.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### Most Common Disease Pairs
-# MAGIC 
+# MAGIC
 # MAGIC Lets check which diseases seen together in the same patient clinical note.
 
 # COMMAND ----------
@@ -1098,8 +1098,8 @@ plt.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Most Common Disease Pairs With Normalized Names 
-# MAGIC 
+# MAGIC ### Most Common Disease Pairs With Normalized Names
+# MAGIC
 # MAGIC Lets check normalized disease pairs.
 
 # COMMAND ----------
@@ -1159,7 +1159,7 @@ plt.show()
 
 # MAGIC %md
 # MAGIC ## DRUG ANALYSIS
-# MAGIC 
+# MAGIC
 # MAGIC We will make analysis on the drug based extractions.
 
 # COMMAND ----------
@@ -1183,7 +1183,7 @@ plt.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Most Common Used Drugs With Normalized Names 
+# MAGIC ### Most Common Used Drugs With Normalized Names
 
 # COMMAND ----------
 
@@ -1205,7 +1205,7 @@ plt.show()
 
 # MAGIC %md
 # MAGIC ### Most Common Used Drug Pairs
-# MAGIC 
+# MAGIC
 # MAGIC Lets check which drugs used together by the patients.
 
 # COMMAND ----------
@@ -1224,7 +1224,7 @@ plt.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Most Common Used Drug Pairs With Normalized Names 
+# MAGIC ### Most Common Used Drug Pairs With Normalized Names
 
 # COMMAND ----------
 
@@ -1243,7 +1243,7 @@ plt.show()
 
 # MAGIC %md
 # MAGIC ### Most Common Actions of Drugs
-# MAGIC 
+# MAGIC
 # MAGIC We will check the most comoon actions of the drugs.
 
 # COMMAND ----------
@@ -1266,8 +1266,8 @@ plt.show()
 
 # MAGIC %md
 # MAGIC ### What kind of diseases do patients who use `Analgesic` drugs have?
-# MAGIC 
-# MAGIC As you can see, the most common drug action is `Analgesic`. Lets check what kind of diseases the patients who use `Analgesic` drugs have. 
+# MAGIC
+# MAGIC As you can see, the most common drug action is `Analgesic`. Lets check what kind of diseases the patients who use `Analgesic` drugs have.
 
 # COMMAND ----------
 
@@ -1305,7 +1305,7 @@ plt.show()
 
 # MAGIC %md
 # MAGIC ## HYPERTENSION ANALYSIS
-# MAGIC 
+# MAGIC
 # MAGIC We found that *hypertension* is the most common disease in the patient notes. Now we will create a *hypertension* sub-dataframe on the `DISEASE_NORMALIZED` column and make some analysis on this dataframe.
 
 # COMMAND ----------
@@ -1399,21 +1399,21 @@ plt.show()
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## License
-# MAGIC Copyright / License info of the notebook. Copyright [2021] the Notebook Authors.  The source in this notebook is provided subject to the [Apache 2.0 License](https://spdx.org/licenses/Apache-2.0.html).  All included or referenced third party libraries are subject to the licenses set forth below.
-# MAGIC 
-# MAGIC |Library Name|Library License|Library License URL|Library Source URL|
-# MAGIC | :-: | :-:| :-: | :-:|
-# MAGIC |Pandas |BSD 3-Clause License| https://github.com/pandas-dev/pandas/blob/master/LICENSE | https://github.com/pandas-dev/pandas|
-# MAGIC |Numpy |BSD 3-Clause License| https://github.com/numpy/numpy/blob/main/LICENSE.txt | https://github.com/numpy/numpy|
-# MAGIC |Apache Spark |Apache License 2.0| https://github.com/apache/spark/blob/master/LICENSE | https://github.com/apache/spark/tree/master/python/pyspark|
-# MAGIC |MatPlotLib | | https://github.com/matplotlib/matplotlib/blob/master/LICENSE/LICENSE | https://github.com/matplotlib/matplotlib|
-# MAGIC |Seaborn |BSD 3-Clause License | https://github.com/seaborn/seaborn/blob/master/LICENSE | https://github.com/seaborn/seaborn/|
-# MAGIC |Spark NLP Display|Apache License 2.0|https://github.com/JohnSnowLabs/spark-nlp-display/blob/main/LICENSE|https://github.com/JohnSnowLabs/spark-nlp-display|
-# MAGIC |Spark NLP |Apache License 2.0| https://github.com/JohnSnowLabs/spark-nlp/blob/master/LICENSE | https://github.com/JohnSnowLabs/spark-nlp|
-# MAGIC |Spark NLP for Healthcare|[Proprietary license - John Snow Labs Inc.](https://www.johnsnowlabs.com/spark-nlp-health/) |NA|NA|
-# MAGIC 
-# MAGIC 
+# MAGIC # License
+# MAGIC Copyright / License info of the notebook. Copyright [2023] the Notebook Authors.  The source in this notebook is provided subject to the [Apache 2.0 License](https://spdx.org/licenses/Apache-2.0.html).  All included or referenced third party libraries are subject to the licenses set forth below.
+# MAGIC
+# MAGIC |Library Name|Library License|Library License URL|Library Source URL| Version |
+# MAGIC | :-: | :-:| :-: | :-:| :-:|
+# MAGIC |Pandas |BSD 3-Clause License| https://github.com/pandas-dev/pandas/blob/master/LICENSE | https://github.com/pandas-dev/pandas| 1.3.4|
+# MAGIC |Numpy |BSD 3-Clause License| https://github.com/numpy/numpy/blob/main/LICENSE.txt | https://github.com/numpy/numpy| 1.20.3|
+# MAGIC |Apache Spark |Apache License 2.0| https://github.com/apache/spark/blob/master/LICENSE | https://github.com/apache/spark/tree/master/python/pyspark| 3.3.0|
+# MAGIC |MatPlotLib | | https://github.com/matplotlib/matplotlib/blob/master/LICENSE/LICENSE | https://github.com/matplotlib/matplotlib| 3.4.3|
+# MAGIC |Seaborn |BSD 3-Clause License | https://github.com/seaborn/seaborn/blob/master/LICENSE | https://github.com/seaborn/seaborn/| 0.11.2|
+# MAGIC |Spark NLP Display|Apache License 2.0|https://github.com/JohnSnowLabs/spark-nlp-display/blob/main/LICENSE|https://github.com/JohnSnowLabs/spark-nlp-display| 4.4|
+# MAGIC |Spark NLP |Apache License 2.0| https://github.com/JohnSnowLabs/spark-nlp/blob/master/LICENSE | https://github.com/JohnSnowLabs/spark-nlp| 4.3.0|
+# MAGIC |Spark NLP for Healthcare|[Proprietary license - John Snow Labs Inc.](https://www.johnsnowlabs.com/spark-nlp-health/) |NA|NA| 4.3.0|
+# MAGIC
+# MAGIC
 # MAGIC |Author|
 # MAGIC |-|
 # MAGIC |Databricks Inc.|

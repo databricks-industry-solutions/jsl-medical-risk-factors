@@ -76,3 +76,5 @@ To run this accelerator, set up JSL Partner Connect [AWS](https://docs.databrick
 <img src="https://raw.githubusercontent.com/databricks-industry-solutions/oncology/main/images/JSL_partner_connect_install.png" width=65%>
 
 Once the JSL installation completes successfully, clone this repo into a Databricks workspace. Attach the `RUNME` notebook to any cluster and execute the notebook via `Run-All`. A multi-step-job describing the accelerator pipeline will be created, and the link will be provided. Execute the multi-step-job to see how the pipeline runs.
+
+**Requirements:** For the versions of the libraries used in this notebook, please check REQUIREMENTS.md file.
